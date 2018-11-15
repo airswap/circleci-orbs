@@ -1,0 +1,113 @@
+version: 2.1
+
+description: |
+  Install the AWS CLI and assume the passed in role
+  based on passed in environment variables
+
+executors:
+  default:
+    description: |
+      The Node-based Docker container to use when
+      installing/configuring the AWS CLI
+
+    parameters:
+      node-version:
+        type: string
+        default: "8"
+
+    docker:
+      - image: circleci/node:<< parameters.node-version >>
+
+commands:
+  install:
+    description: |
+      Install python, then install the AWS CLI via pip.
+    steps:
+      - run:
+          name: Install AWS CLI
+          command: |
+            sudo apt-get install python3 python3-dev python3-pip
+            export PIP=$(which pip pip3 | head -1)
+            if [[ -n $PIP ]]; then
+              if which sudo > /dev/null; then
+                sudo $PIP install awscli --upgrade
+              else
+                # This installs the AWS CLI to ~/.local/bin. Make sure that ~/.local/bin is in your $PATH.
+                $PIP install aws --upgrade --user
+              fi
+            elif [[ $(which unzip curl | wc -l) -eq 2 ]]; then
+              cd
+              curl "https://s3.amazonaws.com/aws-cli/awscli-bundle.zip" -o "awscli-bundle.zip"
+              unzip awscli-bundle.zip
+              if which sudo > /dev/null; then
+                sudo ~/awscli-bundle/install -i /usr/local/aws -b /usr/local/bin/aws
+              else
+                # This installs the AWS CLI to the default location (~/.local/lib/aws) and create a symbolic link (symlink) at ~/bin/aws. Make sure that ~/bin is in your $PATH.
+                awscli-bundle/install -b ~/bin/aws
+              fi
+              rm -rf awscli-bundle*
+              cd -
+            else
+              echo "Unable to install AWS CLI. Please install pip."
+              exit 1
+            fi
+
+  assume-role:
+    description: |
+      Configure and store AWS credentials in
+      ~/.aws/credentials and ~/.aws/config
+
+    parameters:
+      profile-name:
+        description: Profile name to be configured.
+        type: string
+        default: "default"
+
+      aws-access-key-id:
+        description: |
+          AWS access key id for IAM role. Set this to the name of
+          the environment variable you will use to hold this
+          value, i.e. $AWS_ACCESS_KEY.
+        type: string
+        default: $AWS_ACCESS_KEY_ID
+
+      aws-secret-access-key:
+        description: |
+          AWS secret key for IAM role. Set this to the name of
+          the environment variable you will use to hold this
+          value, i.e. $AWS_SECRET_ACCESS_KEY.
+        type: string
+        default: $AWS_SECRET_ACCESS_KEY
+
+      aws-region:
+        description: |
+          AWS region to operate in
+          (defaults to the value of $AWS_REGION)
+        type: string
+        default: $AWS_REGION
+
+      account-id:
+        description: |
+          The AWS account id without dashes (just numbers)
+          (defaults to the value of $ACCOUNT_ID)
+        type: string
+        default: $ACCOUNT_ID
+
+      role-name:
+        description: |
+          The role's name (not ARN)
+          (defaults to the value of $ROLE_NAME)
+        type: string
+        default: $ROLE_NAME
+
+    steps:
+      - run:
+          name: setup role arn
+          command: echo "export ROLE_ARN=arn:aws:iam::<< parameters.account-id >>:role/<< parameters.role-name >>" >> $BASH_ENV
+      - run:
+          name: assume role and export configs
+          command: |
+            CREDENTIALS="$(aws sts assume-role --role-arn $ROLE_ARN --role-session-name build-$CIRCLE_PROJECT_REPONAME-$CIRCLE_BUILD_NUM | jq '.Credentials')"
+            echo "export AWS_ACCESS_KEY_ID=$(echo $CREDENTIALS | jq -r '.AccessKeyId')" >> $BASH_ENV
+            echo "export AWS_SECRET_ACCESS_KEY=$(echo $CREDENTIALS | jq -r '.SecretAccessKey')" >> $BASH_ENV
+            echo "export AWS_SESSION_TOKEN=$(echo $CREDENTIALS | jq -r '.SessionToken')" >> $BASH_ENV
