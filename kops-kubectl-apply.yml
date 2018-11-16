@@ -1,0 +1,60 @@
+version: 2.1
+
+description: |
+  Install the AWS CLI and assume the passed in role
+  based on passed in environment variables
+
+commands:
+  apply:
+    description: |
+      Install kops, kubectl, set up the state store, and apply the changes
+
+    parameters:
+      url:
+        description: The URL for the kubecfg command
+        type: string
+        default: ""
+
+      state-store:
+        description: The location of the state store (S3 bucket)
+        type: string
+        default: ""
+
+      template:
+        description: The default kube template file
+        type: string
+        default: "kube.template.yml"
+
+      platform:
+        description: The platform for kops and kubectl
+        type: string
+        default: "linux"
+
+      architecture:
+        description: CPU architecture for kops and kubectl
+        type: string
+        default: "amd64"
+
+      version:
+        description: Kops version to download
+        type: string
+        default: "1.9.1"
+
+    steps:
+      - run:
+          name: Install kops and kubectl
+          command: |
+            curl -LO https://github.com/kubernetes/kops/releases/download/<< parameters.version >>/kops-<< parameters.platform >>-<< parameters.architecture >>
+            sudo chmod +x kops-<< parameters.platform >>-<< parameters.architecture >>
+            sudo mv kops-<< parameters.platform >>-<< parameters.architecture >> /usr/bin/kops
+            curl -LO https://storage.googleapis.com/kubernetes-release/release/$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/<< parameters.platform >>/<< parameters.architecture >>/kubectl
+            sudo chmod +x kubectl
+            sudo mv kubectl /usr/bin
+            sudo apt-get install gettext-base
+      - run:
+          name: Apply deployment to kubectl
+          command: |
+            export KOPS_STATE_STORE=<< parameters.state-store >>
+            kops export kubecfg << parameters.url >>
+            envsubst < << parameters.template >> > kube.yml
+            kubectl apply -f kube.yml
