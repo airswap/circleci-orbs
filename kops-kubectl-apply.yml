@@ -1,8 +1,21 @@
 version: 2.1
 
 description: |
-  Install the AWS CLI and assume the passed in role
-  based on passed in environment variables
+  Apply kube file to k8s setup using kops
+
+executors:
+  default:
+    description: |
+      The Node-based Docker container to use when
+      installing/configuring the AWS CLI
+
+    parameters:
+      node-version:
+        type: string
+        default: "8"
+
+    docker:
+      - image: circleci/node:<< parameters.node-version >>
 
 commands:
   apply:
@@ -19,11 +32,6 @@ commands:
         description: The location of the state store (S3 bucket)
         type: string
         default: ""
-
-      template:
-        description: The default kube template file
-        type: string
-        default: "kube.template.yml"
 
       platform:
         description: The platform for kops and kubectl
@@ -50,11 +58,9 @@ commands:
             curl -LO https://storage.googleapis.com/kubernetes-release/release/$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/<< parameters.platform >>/<< parameters.architecture >>/kubectl
             sudo chmod +x kubectl
             sudo mv kubectl /usr/bin
-            sudo apt-get install gettext-base
       - run:
           name: Apply deployment to kubectl
           command: |
             export KOPS_STATE_STORE=<< parameters.state-store >>
             kops export kubecfg << parameters.url >>
-            envsubst < << parameters.template >> > kube.yml
             kubectl apply -f kube.yml
