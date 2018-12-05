@@ -1,0 +1,45 @@
+version: 2.1
+
+description: |
+  Install and deploy a serverless website, including a custom domain
+
+commands:
+  install:
+    description: |
+      Install serverless framework
+
+    steps:
+      - run:
+          name: Installing Serverless framework
+          command: sudo npm i -g serverless
+
+  deploy:
+    description: |
+      Deploy the serverless website, including a flag for a custom domain
+      setup before deployment
+
+    parameters:
+      env:
+        description: The environment variable
+        type: string
+        default: ${ENV}
+
+      custom-domain:
+        description: |
+          A simple boolean flag to deploy a custom domain through serverless
+          before starting the deploy itself
+        default: "true"
+        type: string
+
+    steps:
+      - run:
+          name: Creating or updating Serverless custom domain
+          command: |
+            if [[ "<< parameters.custom-domain >>" == "true" || "<< parameters.custom-domain >>" == true ]]; then
+              serverless create_domain
+            fi
+      - run:
+          name: Deploying Serverless stack
+          command: |
+            echo "Deploying for $ENV"
+            serverless deploy
