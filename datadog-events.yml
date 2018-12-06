@@ -1,0 +1,50 @@
+version: 2.1
+
+description: |
+  Raise a CircleCI event to Datadog upon a successful job
+
+commands:
+  deploy:
+    description: |
+      Notify Datadog of the deploy event via cURL
+
+    parameters:
+      datadog-api:
+        description: The Datadog API key
+        type: string
+        default: ${DATADOG_API_KEY}
+      environment:
+        description: The Datadog environment tag value
+        type: string
+        default: ${ENV}
+
+    steps:
+      - run:
+          name: Datadog - Setting Success Condition
+          command: |
+            echo 'export SLACK_BUILD_STATUS="success"' >> $BASH_ENV
+          when: on_success
+      - run:
+          name: Datadog - Sending Event
+          command: |
+            #If successful
+            if [ "$SLACK_BUILD_STATUS" = "success" ]; then
+              curl  -X POST -H "Content-type: application/json" \
+              --data "{
+                    \"title\": \"Successful CircleCI Deploy\",
+                    \"text\": \"$CIRCLE_BRANCH of $CIRCLE_PROJECT_REPONAME was successfully deployed by $CIRCLE_USERNAME (Build #$CIRCLE_BUILD_NUM). See the job here: $CIRCLE_BUILD_URL\",
+                    \"priority\": \"normal\",
+                    \"tags\": [
+                    	\"environment:<< parameters.environment >>\",
+                    	\"repository:$CIRCLE_PROJECT_REPONAME\",
+                    	\"branch:$CIRCLE_BRANCH\",
+                    	\"build_num:$CIRCLE_BUILD_NUM\",
+                    	\"job:$CIRCLE_JOB\",
+                    	\"started_by:$CIRCLE_USERNAME\"
+                		],
+                    \"alert_type\": \"success\",
+                    \"source_type_name\": \"CIRCLECI\",
+                    \"aggregation_key\": \"circleci_deploys\"
+              }" \
+              "https://api.datadoghq.com/api/v1/events?api_key=<< parameters.datadog-api >>"
+            fi
