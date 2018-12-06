@@ -22,13 +22,13 @@ commands:
       - run:
           name: Datadog - Setting Success Condition
           command: |
-            echo 'export SLACK_BUILD_STATUS="success"' >> $BASH_ENV
+            echo 'export DATADOG_BUILD_STATUS="success"' >> $BASH_ENV
           when: on_success
       - run:
           name: Datadog - Sending Event
           command: |
             #If successful
-            if [ "$SLACK_BUILD_STATUS" = "success" ]; then
+            if [ "$DATADOG_BUILD_STATUS" = "success" ]; then
               curl  -X POST -H "Content-type: application/json" \
               --data "{
                     \"title\": \"Successful CircleCI Deploy\",
