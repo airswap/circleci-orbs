@@ -32,7 +32,7 @@ commands:
               curl  -X POST -H "Content-type: application/json" \
               --data "{
                     \"title\": \"Successful CircleCI Deploy\",
-                    \"text\": \"$CIRCLE_BRANCH of $CIRCLE_PROJECT_REPONAME was successfully deployed by $CIRCLE_USERNAME (Build #$CIRCLE_BUILD_NUM). See the job here: $CIRCLE_BUILD_URL\",
+                    \"text\": \"Branch $CIRCLE_BRANCH of $CIRCLE_PROJECT_REPONAME was successfully deployed by $CIRCLE_USERNAME (Build #$CIRCLE_BUILD_NUM). See the job here: $CIRCLE_BUILD_URL\",
                     \"priority\": \"normal\",
                     \"tags\": [
                     	\"environment:<< parameters.environment >>\",
