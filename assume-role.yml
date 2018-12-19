@@ -76,7 +76,7 @@ commands:
       - run:
           name: Setup role name to assume
           command: |
-            #sed -i -e 's/^export ROLE_ARN=.*$//g' $BASH_ENV || : # Remove the old ROLE_ARN if it is present
+            sed -i -e 's/^export ROLE_ARN=.*$//g' $BASH_ENV || : # Remove the old ROLE_ARN if it is present
             echo "export ROLE_ARN=arn:aws:iam::<< parameters.account-id >>:role/<< parameters.role-name >>" >> $BASH_ENV
       - run:
           name: Storing default values to re-assume the base user
