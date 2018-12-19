@@ -66,10 +66,40 @@ commands:
         type: string
         default: $ROLE_NAME
 
+      sts-session-token:
+        description: |
+          The (optional) STS token to pass in
+        type: string
+        default: ${AWS_SESSION_TOKEN}
+
     steps:
       - run:
-          name: Setup and export the ROLE_ARN
-          command: echo "export ROLE_ARN=arn:aws:iam::<< parameters.account-id >>:role/<< parameters.role-name >>" >> $BASH_ENV
+          name: Setup role name to assume
+          command: |
+            echo "export ROLE_ARN=arn:aws:iam::<< parameters.account-id >>:role/<< parameters.role-name >>" >> $BASH_ENV
+      - run:
+          name: Storing default values to re-assume the base user
+          command: |
+            # When there is NOT an AWS_SESSION_TOKEN set yet
+            if [[ "$AWS_SESSION_TOKEN" == "" ]]; then
+              echo "Storing original user credentials"
+              echo "export BACKUP_AWS_ACCESS_KEY_ID=$(echo $AWS_ACCESS_KEY_ID)" >> $BASH_ENV
+              echo "export BACKUP_AWS_SECRET_ACCESS_KEY=$(echo $AWS_SECRET_ACCESS_KEY)" >> $BASH_ENV
+            fi
+      - run:
+          name: Recovering original user
+          command: |
+            # Recover the original user credentials if we are in a role
+            # only when there IS a AWS_SESSION_TOKEN set
+            if [[ "$AWS_SESSION_TOKEN" != "" ]]; then
+              echo "Recovering original user credentials"
+              sed -i -e 's/^export AWS_ACCESS_KEY_ID=.*$//g' $BASH_ENV
+              sed -i -e 's/^export AWS_SECRET_ACCESS_KEY=.*$//g' $BASH_ENV
+              sed -i -e 's/^export AWS_SESSION_TOKEN=.*$//g' $BASH_ENV
+              sed -i -e 's/^export AWS_SECURITY_TOKEN=.*$//g' $BASH_ENV
+              echo "export AWS_SECRET_ACCESS_KEY=$(echo $BACKUP_AWS_SECRET_ACCESS_KEY)" >> $BASH_ENV
+              echo "export AWS_ACCESS_KEY_ID=$(echo $BACKUP_AWS_ACCESS_KEY_ID)" >> $BASH_ENV
+            fi
       - run:
           name: Assume role and export environment variables
           command: |
