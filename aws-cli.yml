@@ -15,10 +15,10 @@ commands:
       - run:
           name: Install python
           command: |
-            if ! [ -x "$(which python)" ]; then
-              sudo apt-get install python3 python3-dev
+            if ! [ -x "$(which python3)" ]; then
+              sudo apt-get install python3
             fi
-            if ! [ -x "$(which pip)" ]; then
-              easy_install pip
+            if ! [ -x "$(which pip3)" ]; then
+              sudo apt-get install python3-pip
             fi
       - aws-cli/install
