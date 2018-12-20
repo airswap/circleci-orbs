@@ -20,6 +20,6 @@ commands:
             fi
             if ! [ -x "$(which pip)" ]; then
               sudo apt-get install python-setuptools
-              easy_install pip
+              sudo easy_install pip
             fi
       - aws-cli/install
