@@ -4,7 +4,7 @@ description: |
   Deploy to IPFS and update the domain name record in AWS
 
 commands:
-  deployAndUpdateDNS:
+  deploy_and_update_dns:
     description: |
       Deploy the passed  in directory to IPFS, pin to Pinata, and update Route 53
 
@@ -14,17 +14,17 @@ commands:
         type: string
         default: public
 
-      pinataApiKey:
+      pinata-api-key:
         description: The Pinata API key
         default: $PINATA_API_KEY
         type: string
 
-      pinataSecret:
+      pinata-secret:
         description: The Pinata secret
         default: $PINATA_SECRET
         type: string
 
-      dnsRecord:
+      dns-record:
         description: The DNS record to be updated
         default: ""
         type: string
@@ -34,7 +34,7 @@ commands:
         default: "www.cloudflare-ipfs.com"
         type: string
 
-      zoneId:
+      zone-id:
         description: The Route 53 zone ID
         default: ""
         type: string
@@ -43,10 +43,10 @@ commands:
       - run:
           name: Add to IPFS
           command: |
-            PIN_NAME="<< parameters.dnsRecord >> public $CIRCLE_BUILD_NUM"
+            PIN_NAME="<< parameters.dns-record >> public $CIRCLE_BUILD_NUM"
 
-            export IPFS_DEPLOY_PINATA__API_KEY="<< parameters.pinataApiKey >>"
-            export IPFS_DEPLOY_PINATA__SECRET_API_KEY="<< parameters.pinataSecret >>"
+            export IPFS_DEPLOY_PINATA__API_KEY="<< parameters.pinata-api-key >>"
+            export IPFS_DEPLOY_PINATA__SECRET_API_KEY="<< parameters.pinata-secret >>"
 
             export HASH=$(npx ipfs-deploy -p pinata << parameters.directory >>)
             echo "export IPFS_HASH=$HASH" >> $BASH_ENV
@@ -54,7 +54,11 @@ commands:
           name: Update DNS record
           command: |
             echo $IPFS_HASH
-            CHANGE_SET_CNAME="{  \"Changes\": [{ \"Action\": \"UPSERT\", \"ResourceRecordSet\": { \"Name\": \"<< parameters.dnsRecord >>.\", \"Type\": \"CNAME\", \"TTL\": 300, \"ResourceRecords\": [{ \"Value\": \"<< parameters.gateway >>\" }]}}]}"
-            CHANGE_SET_DNSLINK="{  \"Changes\": [{ \"Action\": \"UPSERT\", \"ResourceRecordSet\": { \"Name\": \"_dnslink.<< parameters.dnsRecord >>.\", \"Type\": \"TXT\", \"TTL\": 60, \"ResourceRecords\": [{ \"Value\": \"\\\"dnslink=/ipfs/${IPFS_HASH}\\\"\" }]}}]}"
-            aws route53 change-resource-record-sets --hosted-zone-id << parameters.zoneId >> --change-batch "$CHANGE_SET_DNSLINK"
-            aws route53 change-resource-record-sets --hosted-zone-id << parameters.zoneId >> --change-batch "$CHANGE_SET_CNAME"
+            CHANGE_SET_CNAME="{  \"Changes\": [{ \"Action\": \"UPSERT\", \"ResourceRecordSet\": { \"Name\": \"<< parameters.dns-record >>.\", \"Type\": \"CNAME\", \"TTL\": 300, \"ResourceRecords\": [{ \"Value\": \"<< parameters.gateway >>\" }]}}]}"
+            CHANGE_SET_DNSLINK="{  \"Changes\": [{ \"Action\": \"UPSERT\", \"ResourceRecordSet\": { \"Name\": \"_dnslink.<< parameters.dns-record >>.\", \"Type\": \"TXT\", \"TTL\": 60, \"ResourceRecords\": [{ \"Value\": \"\\\"dnslink=/ipfs/${IPFS_HASH}\\\"\" }]}}]}"
+            aws route53 change-resource-record-sets --hosted-zone-id << parameters.zone-id >> --change-batch "$CHANGE_SET_DNSLINK"
+            aws route53 change-resource-record-sets --hosted-zone-id << parameters.zone-id >> --change-batch "$CHANGE_SET_CNAME"
+      - run:
+          name: Request SSL certificate
+          command: |
+            curl 'https://cloudflare-ipfs.com/add_host' -H 'content-type: application/x-www-form-urlencoded' --data "hostname=<< parameters.dns-record >>"
