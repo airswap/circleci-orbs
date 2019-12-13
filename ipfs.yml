@@ -61,4 +61,14 @@ commands:
       - run:
           name: Request SSL certificate
           command: |
-            curl 'https://cloudflare-ipfs.com/add_host' -H 'content-type: application/x-www-form-urlencoded' --data "hostname=<< parameters.dns-record >>"
+            # add jq for parsing the result
+            apt-get install jq
+            # While loop until we get a certificate issued
+
+            CERT_OUTPUT=$(curl 'https://cloudflare-ipfs.com/add_host' -H 'content-type: application/x-www-form-urlencoded' --data "hostname=<< parameters.dns-record >>" -sS | jq .err)
+
+            while [ CERT_OUTPUT -ne "" ]
+            do
+              sleep 5s
+              CERT_OUTPUT=$(curl 'https://cloudflare-ipfs.com/add_host' -H 'content-type: application/x-www-form-urlencoded' --data "hostname=<< parameters.dns-record >>" -sS | jq .err)
+            done
