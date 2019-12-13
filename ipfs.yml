@@ -62,7 +62,7 @@ commands:
           name: Request SSL certificate
           command: |
             # add jq for parsing the result
-            apt-get install jq
+            sudo apt-get install jq
             # While loop until we get a certificate issued
 
             CERT_OUTPUT=$(curl 'https://cloudflare-ipfs.com/add_host' -H 'content-type: application/x-www-form-urlencoded' --data "hostname=<< parameters.dns-record >>" -sS | jq .err)
