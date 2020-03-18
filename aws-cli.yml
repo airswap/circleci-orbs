@@ -15,10 +15,11 @@ commands:
       - run:
           name: Install python
           command: |
+            sudo apt-get update
             if ! [ -x "$(which python3)" ]; then
-              sudo apt-get install python3
+              sudo apt-get -y install python3
             fi
             if ! [ -x "$(which pip3)" ]; then
-              sudo apt-get install python3-pip
+              sudo apt-get -y install python3-pip
             fi
       - aws-cli/install

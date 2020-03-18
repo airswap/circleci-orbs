@@ -48,7 +48,9 @@ commands:
             export IPFS_DEPLOY_PINATA__API_KEY="<< parameters.pinata-api-key >>"
             export IPFS_DEPLOY_PINATA__SECRET_API_KEY="<< parameters.pinata-secret >>"
 
-            export HASH=$(npx ipfs-deploy -p pinata << parameters.directory >>)
+            BUILD_DIRECTORY=$(readlink -f << parameters.directory >>)
+
+            export HASH=$(npx ipfs-deploy -p pinata $BUILD_DIRECTORY)
             echo "export IPFS_HASH=$HASH" >> $BASH_ENV
       - run:
           name: Update DNS record
