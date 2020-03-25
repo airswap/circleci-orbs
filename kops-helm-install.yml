@@ -58,6 +58,11 @@ commands:
         type: string
         default: ""
 
+      helm-chart-path:
+        description: Path to Chart directory
+        type: string
+        default: "."
+
     steps:
       - run:
           name: Install kops and helm 
@@ -73,4 +78,4 @@ commands:
           command: |
             export KOPS_STATE_STORE=<< parameters.state-store >>
             kops export kubecfg << parameters.url >>
-            helm install << parameters.helm-app-name >> .
+            helm install << parameters.helm-app-name >> << parameters.helm-chart-path >>
