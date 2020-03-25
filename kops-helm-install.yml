@@ -1,0 +1,76 @@
+version: 2.1
+
+description: |
+  Install a helm chart using kops
+
+executors:
+  default:
+    description: |
+      The Node-based Docker container to use when
+      installing/configuring the AWS CLI
+
+    parameters:
+      node-version:
+        type: string
+        default: "8"
+
+    docker:
+      - image: circleci/node:<< parameters.node-version >>
+
+commands:
+  apply:
+    description: |
+      Install kops, helm, set up the state store, and apply the changes
+
+    parameters:
+      url:
+        description: The URL for the kubecfg command
+        type: string
+        default: ""
+
+      state-store:
+        description: The location of the state store (S3 bucket)
+        type: string
+        default: ""
+
+      platform:
+        description: The platform for kops and helm
+        type: string
+        default: "linux"
+
+      architecture:
+        description: CPU architecture for kops and helm
+        type: string
+        default: "amd64"
+
+      version:
+        description: Kops version to download
+        type: string
+        default: "1.9.1"
+
+      helm-version:
+        description: Helm version to download
+        type: string
+        default: "2.16.4"
+
+      helm-app-name:
+        description: Name of application for helm
+        type: string
+        default: ""
+
+    steps:
+      - run:
+          name: Install kops and helm 
+          command: |
+            curl -LO https://github.com/kubernetes/kops/releases/download/<< parameters.version >>/kops-<< parameters.platform >>-<< parameters.architecture >>
+            sudo chmod +x kops-<< parameters.platform >>-<< parameters.architecture >>
+            sudo mv kops-<< parameters.platform >>-<< parameters.architecture >> /usr/bin/kops
+            curl https://get.helm.sh/helm-v<< parameters.helm-version >>-<< parameters.platform >>-<< parameters.architecture >>.tar.gz | tar xz
+            sudo mv << parameters.platform >>-<< parameters.architecture >>/helm /usr/bin/helm 
+            sudo chmod +x /usr/sbin/helm
+      - run:
+          name: Setup kops
+          command: |
+            export KOPS_STATE_STORE=<< parameters.state-store >>
+            kops export kubecfg << parameters.url >>
+            helm install << parameters.helm-app-name >> .
