@@ -67,7 +67,7 @@ commands:
             sudo mv kops-<< parameters.platform >>-<< parameters.architecture >> /usr/bin/kops
             curl https://get.helm.sh/helm-v<< parameters.helm-version >>-<< parameters.platform >>-<< parameters.architecture >>.tar.gz | tar xz
             sudo mv << parameters.platform >>-<< parameters.architecture >>/helm /usr/bin/helm 
-            sudo chmod +x /usr/sbin/helm
+            sudo chmod +x /usr/bin/helm
       - run:
           name: Setup kops
           command: |
