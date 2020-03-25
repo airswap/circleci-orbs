@@ -18,7 +18,7 @@ executors:
       - image: circleci/node:<< parameters.node-version >>
 
 commands:
-  apply:
+  install:
     description: |
       Install kops, helm, set up the state store, and apply the changes
 
