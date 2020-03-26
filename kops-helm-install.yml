@@ -78,4 +78,4 @@ commands:
           command: |
             export KOPS_STATE_STORE=<< parameters.state-store >>
             kops export kubecfg << parameters.url >>
-            helm install << parameters.helm-app-name >> << parameters.helm-chart-path >>
+            helm upgrade --install << parameters.helm-app-name >> << parameters.helm-chart-path >>
