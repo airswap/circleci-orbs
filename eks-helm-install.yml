@@ -22,11 +22,6 @@ commands:
       Install helm and apply changes
 
     parameters:
-      url:
-        description: The URL for the kubecfg command
-        type: string
-        default: ""
-
       platform:
         description: The platform for kops and helm
         type: string
