@@ -1,0 +1,82 @@
+version: 2.1
+
+description: |
+  Install a helm chart using kops
+
+executors:
+  default:
+    description: |
+      A wrapper to get Helm v3+ installed on the CI/CD box and apply the chart
+
+    parameters:
+      node-version:
+        type: string
+        default: "12"
+
+    docker:
+      - image: circleci/node:<< parameters.node-version >>
+
+commands:
+  install:
+    description: |
+      Install helm and apply changes
+
+    parameters:
+      url:
+        description: The URL for the kubecfg command
+        type: string
+        default: ""
+
+      platform:
+        description: The platform for kops and helm
+        type: string
+        default: "linux"
+
+      architecture:
+        description: CPU architecture for kops and helm
+        type: string
+        default: "amd64"
+
+      helm-version:
+        description: Helm version to download
+        type: string
+        default: "3.1.2"
+
+      helm-app-name:
+        description: Name of application for helm
+        type: string
+        default: ""
+
+      helm-chart-path:
+        description: Path to Chart directory
+        type: string
+        default: "."
+
+      cluster-name:
+        description: The name of the EKS cluster
+        type: string
+        default: ""
+
+      region:
+        description: The AWS region where the EKS cluster resides
+        type: string
+        default: "us-east-1"
+
+    steps:
+      - run:
+          name: Install aws and helm
+          command: |
+            if ! command -v "aws" > /dev/null 2>&1; then
+              curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+              unzip awscliv2.zip
+              sudo ./aws/install
+              aws --version
+            fi
+            curl https://get.helm.sh/helm-v<< parameters.helm-version >>-<< parameters.platform >>-<< parameters.architecture >>.tar.gz | tar xz
+            sudo mv << parameters.platform >>-<< parameters.architecture >>/helm /usr/bin/helm 
+            sudo chmod +x /usr/bin/helm
+      - run:
+          name: Setup kops
+          command: |
+            aws eks --region << parameters.region >> update-kubeconfig --name << parameters.cluster-name >>
+            helm upgrade --install << parameters.helm-app-name >> << parameters.helm-chart-path >>
