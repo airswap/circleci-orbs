@@ -71,7 +71,7 @@ commands:
             sudo mv << parameters.platform >>-<< parameters.architecture >>/helm /usr/bin/helm 
             sudo chmod +x /usr/bin/helm
       - run:
-          name: Setup kops
+          name: Update EKS config and apply Update
           command: |
             aws eks --region << parameters.region >> update-kubeconfig --name << parameters.cluster-name >>
             helm upgrade --install << parameters.helm-app-name >> << parameters.helm-chart-path >>
