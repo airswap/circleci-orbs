@@ -51,7 +51,13 @@ commands:
             BUILD_DIRECTORY=$(readlink -f << parameters.directory >>)
 
             export HASH=$(npx ipfs-deploy -p pinata $BUILD_DIRECTORY)
-            echo "export IPFS_HASH=$HASH" >> $BASH_ENV
+            if [[ -z "$HASH" ]]
+            then
+              echo "Error setting hash. Aborting."
+              exit 1
+            else
+              echo "export IPFS_HASH=$HASH" >> $BASH_ENV
+            fi
       - run:
           name: Update DNS record
           command: |
